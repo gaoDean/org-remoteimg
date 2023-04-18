@@ -33,18 +33,30 @@
 
 (require 'org)
 (require 'url)
+(require 'url-cache)
 
-(defun org-http-image-data-fn (protocol link _description)
+(defun org-remoteimg--fetch-image (protocol link _description)
   "Interpret LINK as an URL to an image file."
   (when (and (image-type-from-file-name link)
              (not (eq org-display-remote-inline-images 'skip)))
-    (if-let (buf (url-retrieve-synchronously (concat protocol ":" link)))
-        (with-current-buffer buf
-          (goto-char (point-min))
-          (re-search-forward "\r?\n\r?\n" nil t)
-          (buffer-substring-no-properties (point) (point-max)))
-      (message "Download of image \"%s\" failed" link)
-      nil)))
+    (let* ((cache (eq org-display-remote-inline-images 'cache))
+           (user-url-caching-setting url-automatic-caching)
+           (url (concat protocol ":" link))
+           (silent-output (file-exists-p (url-cache-create-filename url))))
+      (when cache (setq url-automatic-caching t))
+      (prog1
+          (if-let (buf (url-retrieve-synchronously url
+                                                   silent-output
+                                                   nil
+                                                   30))
+              (with-current-buffer buf
+                (goto-char (point-min))
+                (re-search-forward "\r?\n\r?\n" nil t)
+                (buffer-substring-no-properties (point) (point-max)))
+            (message "Download of image \"%s\" failed" link)
+            nil)
+        (when cache
+          (setq url-automatic-caching user-url-caching-setting))))))
 
 (org-link-set-parameters "http"  :image-data-fun #'org-remoteimg--fetch-image)
 (org-link-set-parameters "https" :image-data-fun #'org-remoteimg--fetch-image)
