@@ -2,7 +2,7 @@
 
 ;; Copyright (C) 2023 Dean Gao - MIT License
 ;; Author: Dean Gao <gao.dean@hotmail.com>
-;; Description: Inline display of remote images in org-mode with automatic caching
+;; Description: Inline display of remote images in org-mode
 ;; Homepage: https://github.com/gaoDean/org-imgtog
 ;; Package-Requires: ((emacs "25.1"))
 
@@ -28,56 +28,23 @@
 
 ;; This package displays remote images inline in org-mode with caching.
 ;; This means you can do [[https://my-file.png]], and have it display inline.
-;; This image will also be cached for instant fetching next time.
 
 ;;; Code:
 
 (require 'org)
 (require 'url)
-(require 'url-cache)
 
-(defgroup org-remoteimg nil
-  "Display remote images inline, with automatic caching."
-  :group 'org)
-
-(defcustom org-remoteimg-cache t
-  "Sets if the images should be cached."
-  :group 'org-remoteimg
-  :type 'boolean)
-
-(defcustom org-remoteimg-cache-expire 168
-"Time (in hours) after which a cached image is considered expired.
-Defaults to one week.
-This is useful because some images are constantly updated in
-certain websites."
-  :group 'org-remoteimg
-  :type 'number)
-
-(defun org-remoteimg--extract-image-data ()
-  "Extract image data from HTTP response."
-  (goto-char (point-min))
-  (re-search-forward "\r?\n\r?\n" nil t)
-  (buffer-substring-no-properties (point) (point-max)))
-
-(defun org-remoteimg--fetch-image (protocol link _description)
+(defun org-http-image-data-fn (protocol link _description)
   "Interpret LINK as an URL to an image file."
-  (when (and (image-type-from-file-name link))
-    (let* ((url (concat protocol ":" link))
-           (cache-file (url-cache-create-filename url))
-           (url-cache-settings url-automatic-caching))
-      (if (and (file-exists-p cache-file)
-               (not (url-cache-expired url (* 60 60 org-remoteimg-cache-expire))))
-          (with-temp-buffer
-            (set-buffer-multibyte nil) ; Ensure the buffer is unibyte
-            (url-cache-extract cache-file) ; Insert the cache data
-            (org-remoteimg--extract-image-data))
-        (prog2
-            (setq url-automatic-caching org-remoteimg-cache)
-            (if-let (buf (url-retrieve-synchronously url))
-                (with-current-buffer buf
-                  (org-remoteimg--extract-image-data))
-              (message "Download of image \"%s\" failed" link) nil)
-            (setq url-automatic-caching url-cache-settings))))))
+  (when (and (image-type-from-file-name link)
+             (not (eq org-display-remote-inline-images 'skip)))
+    (if-let (buf (url-retrieve-synchronously (concat protocol ":" link)))
+        (with-current-buffer buf
+          (goto-char (point-min))
+          (re-search-forward "\r?\n\r?\n" nil t)
+          (buffer-substring-no-properties (point) (point-max)))
+      (message "Download of image \"%s\" failed" link)
+      nil)))
 
 (org-link-set-parameters "http"  :image-data-fun #'org-remoteimg--fetch-image)
 (org-link-set-parameters "https" :image-data-fun #'org-remoteimg--fetch-image)
