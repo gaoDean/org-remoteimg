@@ -4,7 +4,7 @@
 ;; Author: Dean Gao <gao.dean@hotmail.com>
 ;; Description: Inline display of remote images in org-mode
 ;; Homepage: https://github.com/gaoDean/org-imgtog
-;; Package-Requires: ((emacs "25.1"))
+;; Package-Requires: ((emacs "25.1") (org-yt "0"))
 
 ;; Permission is hereby granted, free of charge, to any person obtaining a copy
 ;; of this software and associated documentation files (the "Software"), to deal
@@ -62,6 +62,7 @@
 
 (org-link-set-parameters "http"  :image-data-fun #'org-remoteimg--fetch-image)
 (org-link-set-parameters "https" :image-data-fun #'org-remoteimg--fetch-image)
+
 
 
 (provide 'org-remoteimg)

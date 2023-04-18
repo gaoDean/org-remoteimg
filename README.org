@@ -13,11 +13,14 @@ This feature is present in Doom Emacs, and when I switched to GNU emacs, I found
 ** Install
 *** use-package
 #+begin_src elisp
+  (use-package org-yt
+    :straight (org-yt :type git :host github :repo "TobiasZawada/org-yt"))
   (use-package org-remoteimg
     :straight (org-remoteimg :type git :host github :repo "gaoDean/org-remoteimg"))
 #+end_src
 
 *** Manual
+(i'll figure this out later, but for the time being you must install org-yt before this.
 #+begin_src elisp
   (add-to-list 'load-path "/path/to/plugin/")
   (require 'org-remoteimg)
