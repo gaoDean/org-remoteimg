@@ -1,7 +1,9 @@
 * org-remoteimg
-Display remote inline images in org-mode, with automatic caching.
+Display remote inline images in org-mode with automatic caching.
 
 ** About
+This package displays remote images inline in org-mode with automatic caching. This means you can do [[https://my-file.png]], and have it display inline. The next time you visit the file or fetch the image, it will be instantly fetched from the cache.
+
 This feature is present in Doom Emacs, and when I switched to GNU emacs, I found that I had quite liked that feature, so I made it here. You can finally do ~[[https://gaodean.me/gen/cat.jpg]]~, and have it display inline just like local images. The code here is adapted from the Doom Emacs codebase, and I just thought to make a small plugin to make it simpler to use for GNU emacs users.
 
 [[https://gaodean.me/gen/cat.jpg]]
@@ -24,7 +26,7 @@ This feature is present in Doom Emacs, and when I switched to GNU emacs, I found
 ** Caching
 After the install, remember to do:
 #+begin_src elisp
-  (setq org-display-remote-inline-images 'cache)
+  (setq org-display-remote-inline-images 'cache) ;; enable caching
   ;; (setq org-display-remote-inline-images 'download) ;; or this if you don't want caching
   ;; (setq org-display-remote-inline-images 'skip) ;; or this if you want to disable this plugin
 #+end_src

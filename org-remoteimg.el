@@ -26,8 +26,10 @@
 
 ;;; Commentary:
 
-;; This package displays remote images inline in org-mode with caching.
+;; This package displays remote images inline in org-mode with automatic caching.
 ;; This means you can do [[https://my-file.png]], and have it display inline.
+;; The next time you visit the file or fetch the image, it will be instantly
+;; fetched from the cache.
 
 ;;; Code:
 
