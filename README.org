@@ -2,7 +2,7 @@
 Display remote inline images in org-mode, with automatic caching.
 
 ** About
-This feature is present in Doom Emacs, and when I switched to GNU emacs, I found that I had quite liked that feature, so I made it here. You can finally do ~[[https://gaodean.me/gen/cat.jpg]]~, and have it display inline just like local images.
+This feature is present in Doom Emacs, and when I switched to GNU emacs, I found that I had quite liked that feature, so I made it here. You can finally do ~[[https://gaodean.me/gen/cat.jpg]]~, and have it display inline just like local images. The code here is mostly from the Doom Emacs codebase, and I just thought to make a small plugin to make it simpler to use for GNU emacs users.
 
 [[https://gaodean.me/gen/cat.jpg]]
 
@@ -27,7 +27,7 @@ After the install, remember to do:
 #+end_src
 
 ** Caching
-This is not present in Doom Emacs by default. If you want automatic caching, setup these two variables:
+This is not present in Doom Emacs by default, or this plugin. If you want automatic caching for either, setup these two variables:
 #+begin_src elisp
   (setq url-automatic-caching t)
   (setq url-cache-directory "/path/to/cache/") ;; optional
