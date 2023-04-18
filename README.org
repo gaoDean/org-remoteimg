@@ -2,18 +2,13 @@
 Display remote inline images in org-mode, with automatic caching.
 
 ** About
-This feature is present in Doom Emacs, and when I switched to GNU emacs, I found that I had quite liked that feature, so I made it here. You can finally do ~[[https://gaodean.me/gen/cat.jpg]]~, and have it display inline just like local images. The code here is mostly from the Doom Emacs codebase, and I just thought to make a small plugin to make it simpler to use for GNU emacs users.
+This feature is present in Doom Emacs, and when I switched to GNU emacs, I found that I had quite liked that feature, so I made it here. You can finally do ~[[https://gaodean.me/gen/cat.jpg]]~, and have it display inline just like local images. The code here is adapted from the Doom Emacs codebase, and I just thought to make a small plugin to make it simpler to use for GNU emacs users.
 
 [[https://gaodean.me/gen/cat.jpg]]
 
 (this image would display in emacs with the plugin enabled)
 
 ** Install
-After the install, remember to do:
-#+begin_src elisp
-(setq org-display-remote-inline-images 'cache)
-#+end_src
-
 *** use-package
 #+begin_src elisp
   (use-package org-remoteimg
@@ -27,11 +22,11 @@ After the install, remember to do:
 #+end_src
 
 ** Caching
-This is not present in Doom Emacs by default, or this plugin. If you want automatic caching for either, setup these two variables:
+After the install, remember to do:
 #+begin_src elisp
-  (setq url-automatic-caching t)
-  (setq url-cache-directory "/path/to/cache/") ;; optional
+  (setq org-display-remote-inline-images 'cache)
+  ;; (setq org-display-remote-inline-images 'download) ;; or this if you don't want caching
+  ;; (setq org-display-remote-inline-images 'skip) ;; or this if you want to disable this plugin
 #+end_src
-
 ** Other
-This plugin works quite well with [[https://gaoDean/org-imgtog][org-imgtog]]. Remember to do caching if you want to use it though, otherwise you'll have a bad time.
+This plugin works quite well with [[https://gaoDean/org-imgtog][org-imgtog]]. Remember to setup caching if you want to use it though, otherwise you'll have a bad time.
