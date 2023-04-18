@@ -1,5 +1,5 @@
 * org-remoteimg
-Display remote images inline, with automatic caching.
+Display remote inline images in org-mode, with automatic caching.
 
 ** About
 This feature is present in Doom Emacs (without the caching), and when I switched to GNU emacs, I found that I had quite liked that feature, so I made it here. You can finally do ~[[https://gaodean.me/gen/cat.jpg]]~, and have it display inline just like local images.
