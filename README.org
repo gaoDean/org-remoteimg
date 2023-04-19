@@ -31,4 +31,6 @@ After the install, remember to do:
   ;; (setq org-display-remote-inline-images 'skip) ;; or this if you want to disable this plugin
 #+end_src
 ** Other
-This plugin works quite well with [[https://gaoDean/org-imgtog][org-imgtog]]. Remember to setup caching if you want to use it though, otherwise you'll have a bad time.
++ This plugin works quite well with [[https://gaoDean/org-imgtog][org-imgtog]]. Remember to setup caching if you want to use it though, otherwise you'll have a bad time.
++ Credit to Tobias Zawada and his [[https://github.com/TobiasZawada/org-yt][org-yt]] plugin for the org-mode image display functions.
++ Credit to the Doom Emacs community for the basis of the remote image fetching function.
