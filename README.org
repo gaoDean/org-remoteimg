@@ -26,10 +26,24 @@ This feature is present in Doom Emacs, and when I switched to GNU emacs, I found
 ** Caching
 After the install, remember to do:
 #+begin_src elisp
+  ;; optional: set this to wherever you want the cache to be stored
+  ;; (setq url-cache-directory "~/.cache/emacs/url")
+
   (setq org-display-remote-inline-images 'cache) ;; enable caching
-  ;; (setq org-display-remote-inline-images 'download) ;; or this if you don't want caching
-  ;; (setq org-display-remote-inline-images 'skip) ;; or this if you want to disable this plugin
+
+  ;; or this if you don't want caching
+  ;; (setq org-display-remote-inline-images 'download)
+
+  ;; or this if you want to disable this plugin
+  ;; (setq org-display-remote-inline-images 'skip)
 #+end_src
+
+By default, this plugin will only cache images. If you want to cache any web request, just do:
+#+begin_src elisp
+;; this is a emacs built-in feature
+(setq url-automatic-caching t)
+#+end_src
+
 ** Other
 + This plugin works quite well with [[https://gaoDean/org-imgtog][org-imgtog]]. Remember to setup caching if you want to use it though, otherwise you'll have a bad time.
 + Credit to Tobias Zawada and his [[https://github.com/TobiasZawada/org-yt][org-yt]] plugin for the org-mode image display functions.
