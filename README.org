@@ -45,6 +45,6 @@ By default, this plugin will only cache images. If you want to cache any web req
 #+end_src
 
 ** Other
-+ This plugin works quite well with [[https://gaoDean/org-imgtog][org-imgtog]]. Remember to setup caching if you want to use it though, otherwise you'll have a bad time.
++ This plugin works quite well with [[https://github.com/gaoDean/org-imgtog][org-imgtog]]. Remember to setup caching if you want to use it though, otherwise you'll have a bad time.
 + Credit to Tobias Zawada and his [[https://github.com/TobiasZawada/org-yt][org-yt]] plugin for the org-mode image display functions.
 + Credit to the Doom Emacs community for the basis of the remote image fetching function.
