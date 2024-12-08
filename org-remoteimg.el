@@ -43,6 +43,10 @@
   ;; Add alias to not break Emacs <28.
   (defalias 'image-type-from-file-name 'image-supported-file-p))
 
+;; Compatibility definitions for Org-mode < 9.8
+(unless (boundp 'org-link-preview-overlays)
+  (defalias 'org-inline-image-overlays 'org-link-preview-overlays))
+
 (defun org-image-update-overlay (file link &optional data-p refresh)
   "Create image overlay for FILE associtated with org-element LINK.
 If DATA-P is non-nil FILE is not a file name but a string with the image data.
@@ -115,7 +119,7 @@ This function is almost a duplicate of a part of `org-display-inline-images'."
               (overlay-put
                ov 'modification-hooks
                (list 'org-display-inline-remove-overlay))
-              (push ov org-inline-image-overlays)
+              (push ov org-link-preview-overlays)
               ov)))))))
 
 (defun org-display-user-inline-images (&optional _include-linked _refresh beg end)
@@ -194,12 +198,29 @@ Full credit goes to org-yt by Tobias Zawada for this function."
             (error "Download of image \"%s\" failed" link)
             nil))))
 
-(advice-add #'org-display-inline-images :after #'org-display-user-inline-images)
+(defun org-link-preview-http (ov _path link)
+  "Generate preview OV for LINK in PATH."
+  (when-let* ((raw-link (org-element-property :raw-link link))
+              (image-type (image-supported-file-p raw-link))
+              ;; cache?
+              (image-buffer (org-remoteimg--fetch-image nil raw-link nil)))
+        (overlay-put ov 'display (create-image image-buffer
+                                      ;; scale?
+                                   ;; (and (image-type-available-p 'imagemagick)
+                                   ;;      width
+                                   ;;      'imagemagick)
+                                                             ;; :width width
+                                                             image-type
+                                                             t))
+        t))
 
-(org-link-set-parameters "http"  :image-data-fun #'org-remoteimg--fetch-image)
-(org-link-set-parameters "https" :image-data-fun #'org-remoteimg--fetch-image)
-
-
+(if (fboundp 'org-display-inline-images)
+    (progn
+      (advice-add #'org-display-inline-images :after #'org-display-user-inline-images)
+      (org-link-set-parameters "http"  :image-data-fun #'org-remoteimg--fetch-image)
+      (org-link-set-parameters "https" :image-data-fun #'org-remoteimg--fetch-image))
+  (org-link-set-parameters "http" :preview #'org-link-preview-http)
+  (org-link-set-parameters "https" :preview #'org-link-preview-http))
 
 (provide 'org-remoteimg)
 
