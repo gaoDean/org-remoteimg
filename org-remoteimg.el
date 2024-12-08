@@ -178,12 +178,12 @@ Full credit goes to org-yt by Tobias Zawada for this function."
   (when (and (image-supported-file-p link)
              (not (eq org-display-remote-inline-images 'skip)))
     (let* ((cache (eq org-display-remote-inline-images 'cache))
-           (user-url-caching-setting url-automatic-caching)
+           (url-automatic-caching (if cache
+                                      t
+                                    url-automatic-caching))
            (url (concat protocol ":" link))
            (silent-output (file-exists-p (url-cache-create-filename url))))
-      (when cache (setq url-automatic-caching t))
-      (prog1
-          (if-let* ((buf (url-retrieve-synchronously url
+      (if-let* ((buf (url-retrieve-synchronously url
                                                    silent-output
                                                    nil
                                                    30)))
@@ -191,10 +191,8 @@ Full credit goes to org-yt by Tobias Zawada for this function."
                 (goto-char (point-min))
                 (re-search-forward "\r?\n\r?\n" nil t)
                 (buffer-substring-no-properties (point) (point-max)))
-            (message "Download of image \"%s\" failed" link)
-            nil)
-        (when cache
-          (setq url-automatic-caching user-url-caching-setting))))))
+            (error "Download of image \"%s\" failed" link)
+            nil))))
 
 (advice-add #'org-display-inline-images :after #'org-display-user-inline-images)
 
