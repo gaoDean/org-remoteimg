@@ -144,7 +144,7 @@ Full credit goes to org-yt by Tobias Zawada for this function."
   (when (display-graphic-p)
     (org-with-wide-buffer
      (goto-char (or beg (point-min)))
-     (when-let ((image-data-link-parameters
+     (when-let* ((image-data-link-parameters
 		 (cl-loop for link-par-entry in org-link-parameters
 			  with fun
 			  when (setq fun (plist-get (cdr link-par-entry) :image-data-fun))
@@ -174,7 +174,7 @@ Full credit goes to org-yt by Tobias Zawada for this function."
                    (overlay-put ol 'after-string description)))))))))))
 
 (defun org-remoteimg--fetch-image (protocol link _description)
-  "Synchronously retrieve image from cache or web"
+  "Synchronously retrieve image from cache or web."
   (when (and (image-supported-file-p link)
              (not (eq org-display-remote-inline-images 'skip)))
     (let* ((cache (eq org-display-remote-inline-images 'cache))
@@ -183,10 +183,10 @@ Full credit goes to org-yt by Tobias Zawada for this function."
            (silent-output (file-exists-p (url-cache-create-filename url))))
       (when cache (setq url-automatic-caching t))
       (prog1
-          (if-let (buf (url-retrieve-synchronously url
+          (if-let* ((buf (url-retrieve-synchronously url
                                                    silent-output
                                                    nil
-                                                   30))
+                                                   30)))
               (with-current-buffer buf
                 (goto-char (point-min))
                 (re-search-forward "\r?\n\r?\n" nil t)
