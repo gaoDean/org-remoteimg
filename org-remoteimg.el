@@ -38,6 +38,11 @@
 (require 'url)
 (require 'url-cache)
 
+(unless (fboundp 'image-supported-file-p)
+  ;; `image-supported-file-p' isn't available before Emacs 28
+  ;; Add alias to not break Emacs <28.
+  (defalias 'image-type-from-file-name 'image-supported-file-p))
+
 (defun org-image-update-overlay (file link &optional data-p refresh)
   "Create image overlay for FILE associtated with org-element LINK.
 If DATA-P is non-nil FILE is not a file name but a string with the image data.
@@ -79,7 +84,7 @@ This function is almost a duplicate of a part of `org-display-inline-images'."
                 (org-element-property :begin link)
                 'org-image-overlay)))
       (if (and (car-safe old) refresh)
-          (image-refresh (overlay-get (cdr old) 'display))
+          (image-flush (overlay-get (cdr old) 'display))
         (let ((image (create-image file
                                    (and (image-type-available-p 'imagemagick)
                                         width
@@ -170,7 +175,7 @@ Full credit goes to org-yt by Tobias Zawada for this function."
 
 (defun org-remoteimg--fetch-image (protocol link _description)
   "Synchronously retrieve image from cache or web"
-  (when (and (image-type-from-file-name link)
+  (when (and (image-supported-file-p link)
              (not (eq org-display-remote-inline-images 'skip)))
     (let* ((cache (eq org-display-remote-inline-images 'cache))
            (user-url-caching-setting url-automatic-caching)
