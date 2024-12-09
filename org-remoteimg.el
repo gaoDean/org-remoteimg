@@ -38,20 +38,25 @@
 (require 'url)
 (require 'url-cache)
 
+(unless (fboundp 'image-supported-file-p)
+  ;; `image-supported-file-p' isn't available before Emacs 28
+  ;; Add alias to not break Emacs <28.
+  (defalias 'image-type-from-file-name 'image-supported-file-p))
+
+;; Compatibility definitions for Org-mode < 9.8
+(unless (boundp 'org-link-preview-overlays)
+  (defalias 'org-inline-image-overlays 'org-link-preview-overlays))
+
 (defun org-image-update-overlay (file link &optional data-p refresh)
   "Create image overlay for FILE associtated with org-element LINK.
-If DATA-P is non-nil FILE is not a file name but a string with
-the image data.
+If DATA-P is non-nil FILE is not a file name but a string with the image data.
 If REFRESH is non-nil don't download the file but refresh the image.
 See also `create-image'.
-This function is almost a duplicate of a part of `org-display-inline-images'.
-
-Full credit to org-yt by Tobias Zawada for this function."
+This function is almost a duplicate of a part of `org-display-inline-images'."
   (when (or data-p (file-exists-p file))
     (let ((width
            ;; Apply `org-image-actual-width' specifications.
            (cond
-            ((not (image-type-available-p 'imagemagick)) nil)
             ((eq org-image-actual-width t) nil)
             ((listp org-image-actual-width)
              (or
@@ -83,9 +88,11 @@ Full credit to org-yt by Tobias Zawada for this function."
                 (org-element-property :begin link)
                 'org-image-overlay)))
       (if (and (car-safe old) refresh)
-          (image-refresh (overlay-get (cdr old) 'display))
+          (image-flush (overlay-get (cdr old) 'display))
         (let ((image (create-image file
-                                   (and width 'imagemagick)
+                                   (and (image-type-available-p 'imagemagick)
+                                        width
+                                        'imagemagick)
                                    data-p
                                    :width width)))
           (when image
@@ -112,23 +119,26 @@ Full credit to org-yt by Tobias Zawada for this function."
               (overlay-put
                ov 'modification-hooks
                (list 'org-display-inline-remove-overlay))
-              (push ov org-inline-image-overlays)
+              (push ov org-link-preview-overlays)
               ov)))))))
 
-(defun org-display-user-inline-images
-    (&optional _include-linked _refresh beg end)
+(defun org-display-user-inline-images (&optional _include-linked _refresh beg end)
   "Like `org-display-inline-images' but for image data links.
-_INCLUDE-LINKED and _REFRESH are ignored. Restrict to region
-between BEG and END if both are non-nil. Image data links have a
-:image-data-fun parameter. \(See `org-link-set-parameters'.) The
-value of the :image-data-fun parameter is a function taking the
-PROTOCOL, the LINK, and the DESCRIPTION as arguments. If that
-function returns nil the link is not interpreted as image.
-Otherwise the return value is the image data string to be
-displayed. Note that only bracket links are allowed as image data
-links with one of the formats [[PROTOCOL:LINK]] or
-[[PROTOCOL:LINK][DESCRIPTION]] are recognized.
+_INCLUDE-LINKED and _REFRESH are ignored.
+Restrict to region between BEG and END if both are non-nil.
+Image data links have a :image-data-fun parameter.
+\(See `org-link-set-parameters'.)
+The value of the :image-data-fun parameter is a function
+taking the PROTOCOL, the LINK, and the DESCRIPTION as arguments.
+If that function returns nil the link is not interpreted as image.
+Otherwise the return value is the image data string to be displayed.
 
+Note that only bracket links are allowed as image data links
+with one of the formats
+ [[PROTOCOL:LINK]]
+or
+ [[PROTOCOL:LINK][DESCRIPTION]]
+are recognized.
 Full credit goes to org-yt by Tobias Zawada for this function."
   (interactive)
   (when (and (called-interactively-p 'any)
@@ -138,26 +148,21 @@ Full credit goes to org-yt by Tobias Zawada for this function."
   (when (display-graphic-p)
     (org-with-wide-buffer
      (goto-char (or beg (point-min)))
-     (when-let ((image-data-link-parameters
-                 (cl-loop for link-par-entry in org-link-parameters
-                          with fun
-                          when (setq fun (plist-get (cdr link-par-entry)
-                                                    :image-data-fun))
-                          collect (cons (car link-par-entry) fun)))
-                (image-data-link-re (regexp-opt
-                                     (mapcar 'car image-data-link-parameters)))
-                (re (format
-                     "\\[\\[\\(%s\\):\\([^]]+\\)\\]\\(?:\\[\\([^]]+\\)\\]\\)?\\]"
-                            image-data-link-re)))
+     (when-let* ((image-data-link-parameters
+		 (cl-loop for link-par-entry in org-link-parameters
+			  with fun
+			  when (setq fun (plist-get (cdr link-par-entry) :image-data-fun))
+			  collect (cons (car link-par-entry) fun)))
+		(image-data-link-re (regexp-opt (mapcar 'car image-data-link-parameters)))
+		(re (format "\\[\\[\\(%s\\):\\([^]]+\\)\\]\\(?:\\[\\([^]]+\\)\\]\\)?\\]"
+			    image-data-link-re)))
        (while (re-search-forward re end t)
          (let* ((protocol (match-string-no-properties 1))
-                (link (match-string-no-properties 2))
-                (description (match-string-no-properties 3))
-                (image-data-link (assoc-string protocol
-                                               image-data-link-parameters))
-                (el (save-excursion (goto-char (match-beginning 1))
-                                    (org-element-context)))
-                image-data)
+		(link (match-string-no-properties 2))
+		(description (match-string-no-properties 3))
+		(image-data-link (assoc-string protocol image-data-link-parameters))
+		(el (save-excursion (goto-char (match-beginning 1)) (org-element-context)))
+		image-data)
            (when el
              (setq image-data
                    (or (let ((old (get-char-property-and-overlay
@@ -166,44 +171,56 @@ Full credit goes to org-yt by Tobias Zawada for this function."
                          (and old
                               (car-safe old)
                               (overlay-get (cdr old) 'display)))
-                       (funcall (cdr image-data-link)
-                                protocol
-                                link
-                                description)))
+		       (funcall (cdr image-data-link) protocol link description)))
              (when image-data
                (let ((ol (org-image-update-overlay image-data el t t)))
                  (when (and ol description)
                    (overlay-put ol 'after-string description)))))))))))
 
 (defun org-remoteimg--fetch-image (protocol link _description)
-  "Synchronously retrieve image from cache or web"
-  (when (and (image-type-from-file-name link)
+  "Synchronously retrieve image from cache or web."
+  (when (and (image-supported-file-p link)
              (not (eq org-display-remote-inline-images 'skip)))
     (let* ((cache (eq org-display-remote-inline-images 'cache))
-           (user-url-caching-setting url-automatic-caching)
+           (url-automatic-caching (if cache
+                                      t
+                                    url-automatic-caching))
            (url (concat protocol ":" link))
            (silent-output (file-exists-p (url-cache-create-filename url))))
-      (when cache (setq url-automatic-caching t))
-      (prog1
-          (if-let (buf (url-retrieve-synchronously url
+      (if-let* ((buf (url-retrieve-synchronously url
                                                    silent-output
                                                    nil
-                                                   30))
+                                                   30)))
               (with-current-buffer buf
                 (goto-char (point-min))
                 (re-search-forward "\r?\n\r?\n" nil t)
                 (buffer-substring-no-properties (point) (point-max)))
-            (message "Download of image \"%s\" failed" link)
-            nil)
-        (when cache
-          (setq url-automatic-caching user-url-caching-setting))))))
+            (error "Download of image \"%s\" failed" link)
+            nil))))
 
-(advice-add #'org-display-inline-images :after #'org-display-user-inline-images)
+(defun org-link-preview-http (ov _path link)
+  "Generate preview OV for LINK in PATH."
+  (when-let* ((raw-link (org-element-property :raw-link link))
+              (image-type (image-supported-file-p raw-link))
+              ;; cache?
+              (image-buffer (org-remoteimg--fetch-image nil raw-link nil)))
+        (overlay-put ov 'display (create-image image-buffer
+                                      ;; scale?
+                                   ;; (and (image-type-available-p 'imagemagick)
+                                   ;;      width
+                                   ;;      'imagemagick)
+                                                             ;; :width width
+                                                             image-type
+                                                             t))
+        t))
 
-(org-link-set-parameters "http"  :image-data-fun #'org-remoteimg--fetch-image)
-(org-link-set-parameters "https" :image-data-fun #'org-remoteimg--fetch-image)
-
-
+(if (fboundp 'org-display-inline-images)
+    (progn
+      (advice-add #'org-display-inline-images :after #'org-display-user-inline-images)
+      (org-link-set-parameters "http"  :image-data-fun #'org-remoteimg--fetch-image)
+      (org-link-set-parameters "https" :image-data-fun #'org-remoteimg--fetch-image))
+  (org-link-set-parameters "http" :preview #'org-link-preview-http)
+  (org-link-set-parameters "https" :preview #'org-link-preview-http))
 
 (provide 'org-remoteimg)
 
