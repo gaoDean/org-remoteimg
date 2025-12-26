@@ -185,7 +185,7 @@ Full credit goes to org-yt by Tobias Zawada for this function."
            (url-automatic-caching (if cache
                                       t
                                     url-automatic-caching))
-           (url (concat protocol ":" link))
+           (url (if protocol (concat protocol ":" link) link))
            (silent-output (file-exists-p (url-cache-create-filename url))))
       (if-let* ((buf (url-retrieve-synchronously url
                                                    silent-output
@@ -204,15 +204,23 @@ Full credit goes to org-yt by Tobias Zawada for this function."
               (image-type (image-supported-file-p raw-link))
               ;; cache?
               (image-buffer (org-remoteimg--fetch-image nil raw-link nil)))
-        (overlay-put ov 'display (create-image image-buffer
-                                      ;; scale?
-                                   ;; (and (image-type-available-p 'imagemagick)
-                                   ;;      width
-                                   ;;      'imagemagick)
-                                                             ;; :width width
-                                                             image-type
-                                                             t))
-        t))
+    (let* ((width (org-display-inline-image--width link))
+	   (align (org-image--align link))
+           (image (create-image image-buffer image-type t :width width)))
+      (image-flush image)
+      (overlay-put ov 'display image)
+      (overlay-put ov 'face 'default)
+      (overlay-put ov 'keymap image-map)
+      (when align
+        (overlay-put
+         ov 'before-string
+         (propertize
+          " " 'face 'default
+          'display
+          (pcase align
+            ("center" `(space :align-to (- center (0.5 . ,image))))
+            ("right"  `(space :align-to (- right ,image)))))))
+      t)))
 
 (if (fboundp 'org-display-inline-images)
     (progn
