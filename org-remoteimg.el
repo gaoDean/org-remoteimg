@@ -45,10 +45,10 @@
 
 ;; Compatibility definitions for Org-mode < 9.8
 (unless (boundp 'org-link-preview-overlays)
-  (defalias 'org-inline-image-overlays 'org-link-preview-overlays))
+  (defvaralias 'org-link-preview-overlays 'org-inline-image-overlays))
 
 (defun org-image-update-overlay (file link &optional data-p refresh)
-  "Create image overlay for FILE associtated with org-element LINK.
+  "Create image overlay for FILE associated with org-element LINK.
 If DATA-P is non-nil FILE is not a file name but a string with the image data.
 If REFRESH is non-nil don't download the file but refresh the image.
 See also `create-image'.
