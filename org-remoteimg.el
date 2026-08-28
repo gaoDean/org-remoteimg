@@ -198,6 +198,17 @@ Full credit goes to org-yt by Tobias Zawada for this function."
             (error "Download of image \"%s\" failed" link)
             nil))))
 
+(defun org-remoteimg--image-max-width ()
+  "Return the maximum inline image width in pixels."
+  (pcase org-image-max-width
+    (`fill-column (* fill-column (frame-char-width (selected-frame))))
+    (`window (window-width nil t))
+    ((pred integerp) org-image-max-width)
+    ((pred floatp) (floor (* org-image-max-width (window-width nil t))))
+    (`nil nil)
+    (_ (error "Unsupported value of `org-image-max-width': %S"
+              org-image-max-width))))
+
 (defun org-link-preview-http (ov _path link)
   "Generate preview OV for LINK in PATH."
   (when-let* ((raw-link (org-element-property :raw-link link))
@@ -205,8 +216,11 @@ Full credit goes to org-yt by Tobias Zawada for this function."
               ;; cache?
               (image-buffer (org-remoteimg--fetch-image nil raw-link nil)))
     (let* ((width (org-display-inline-image--width link))
-	   (align (org-image--align link))
-           (image (create-image image-buffer image-type t :width width)))
+           (align (org-image--align link))
+           (image (create-image image-buffer image-type t
+                                :width width
+                                :max-width (org-remoteimg--image-max-width)
+                                :scale 1)))
       (image-flush image)
       (overlay-put ov 'display image)
       (overlay-put ov 'face 'default)
@@ -222,13 +236,16 @@ Full credit goes to org-yt by Tobias Zawada for this function."
             ("right"  `(space :align-to (- right ,image)))))))
       t)))
 
-(if (fboundp 'org-display-inline-images)
+(if (fboundp 'org-link-preview-region)
     (progn
-      (advice-add #'org-display-inline-images :after #'org-display-user-inline-images)
-      (org-link-set-parameters "http"  :image-data-fun #'org-remoteimg--fetch-image)
-      (org-link-set-parameters "https" :image-data-fun #'org-remoteimg--fetch-image))
-  (org-link-set-parameters "http" :preview #'org-link-preview-http)
-  (org-link-set-parameters "https" :preview #'org-link-preview-http))
+      (org-link-set-parameters "http" :preview #'org-link-preview-http)
+      (org-link-set-parameters "https" :preview #'org-link-preview-http))
+  ;; Org < 9.8.
+  (progn
+    (with-no-warnings
+      (advice-add #'org-display-inline-images :after #'org-display-user-inline-images))
+    (org-link-set-parameters "http"  :image-data-fun #'org-remoteimg--fetch-image)
+    (org-link-set-parameters "https" :image-data-fun #'org-remoteimg--fetch-image)))
 
 (provide 'org-remoteimg)
 
